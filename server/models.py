@@ -1,12 +1,13 @@
-from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, Float
-from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy import MetaData
+from sqlalchemy.ext.associationproxy import association_proxy
+from marshmallow import Schema, fields
 
-from config import db, bcrypt
+from config import db, bcrypt, ma
 
 convention = {
   "ix": "ix_%(column_0_label)s",
@@ -17,20 +18,23 @@ convention = {
 }
 
 
-# Models go here!
-class User(db.Model, SerializerMixin):
-
+class User(db.Model):
     __tablename__ = 'users'
-
-    serialize_rules = ('-items.user',)
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, nullable=False)
     _password_hash = db.Column(db.String)
 
-    buckets = db.relationship('Bucket', secondary='items', viewonly=True)
-    
+    items = db.relationship('Item', back_populates='user', cascade='all, delete-orphan')
 
+    # buckets = association_proxy('items', 'bucket',
+    #                               creator=lambda bucket_obj: Item(bucket=bucket_obj))
+
+
+    buckets = db.relationship(
+        'Bucket',
+        secondary='items',
+        viewonly=True)
 
     @hybrid_property
     def password_hash(self):
@@ -49,12 +53,10 @@ class User(db.Model, SerializerMixin):
     def __repr__(self):
         return f'User(id={self.id}, ' + \
             f'username={self.username})'
-
-class Item(db.Model, SerializerMixin):
+    
+class Item(db.Model):
 
     __tablename__ = 'items'
-
-    serialize_rules = ('-user.items', '-bucket.items',)
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50), nullable=False)
@@ -62,6 +64,9 @@ class Item(db.Model, SerializerMixin):
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     bucket_id = db.Column(db.Integer, db.ForeignKey('buckets.id'), nullable=False)
+
+    user = db.relationship('User', back_populates='items')
+    bucket = db.relationship('Bucket', back_populates='items')
     
     def __repr__(self):
         return f'Item(id={self.id}, ' + \
@@ -71,21 +76,68 @@ class Item(db.Model, SerializerMixin):
             f'bucket_id={self.bucket_id})'
 
 
-class Bucket(db.Model, SerializerMixin):
+
+class Bucket(db.Model):
 
     __tablename__ = 'buckets'
 
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text, nullable=False)
+    name = db.Column(db.Text, unique=True, nullable=False)
 
 
-    items = db.relationship('Item', backref='bucket', lazy=True)
+    items = db.relationship('Item', back_populates='bucket', lazy=True)
 
 
     def __repr__(self):
         return f'Bucket(id={self.id}, ' + \
             f'name={self.name})'
+    
+
+class ItemSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Item
+        include_relationships = True
+
+    id = ma.auto_field()
+    title = ma.auto_field()
+    content = ma.auto_field()
+    bucket_id = ma.auto_field()
+
+class BucketSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Bucket
+        include_relationships = True
+
+    id = ma.auto_field()
+    name = ma.auto_field()
+    items = fields.List(fields.Nested(ItemSchema(exclude=("bucket", ))))
+  
+class UserSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = User
+        include_relationships = True
+        
+        # buckets = ma.Nested(BucketSchema(many=True))
+
+    id = ma.auto_field()
+    username = ma.auto_field()
+    # buckets = fields.List(fields.Nested(BucketSchema()))
+    buckets = ma.Method("get_buckets")
+
+
+    def get_buckets(self, user):
+        buckets = user.buckets
+        bucket_schema = BucketSchema()
+        filtered_buckets = []
+        for bucket in buckets:
+            filtered_items = [item for item in bucket.items if item.user_id == user.id]
+            bucket_data = bucket_schema.dump(bucket)
+            bucket_data['items'] = ItemSchema(many=True).dump(filtered_items)
+            filtered_buckets.append(bucket_data)
+
+        return filtered_buckets
+
     
 
 

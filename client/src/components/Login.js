@@ -1,127 +1,80 @@
-import React, { useState, useContext }  from 'react'
-import { UserContext } from "./User";
+
+
+import { useState, useContext } from 'react'
+import { MyContext } from "../context/AppContext";
+import { useFormik } from "formik";
+import * as yup from "yup";
 import {useNavigate} from "react-router-dom"
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null)
+  const {login} = useContext(MyContext)
   const navigate = useNavigate();
-  const {login} = useContext(UserContext);
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e) => {
-      e.preventDefault()
-      fetch("/login", {
+  const formSchema = yup.object().shape({
+    username: yup.string().required("Must enter a username"),
+    password: yup.string().required("Must enter a password")
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      username: "",
+      password: ""
+    },
+    validationSchema: formSchema,
+    onSubmit: (user, {resetForm}) => {
+        fetch("/login", {
           method: "POST",
           headers: {
               "Content-Type": "application/json"
           },
           body: JSON.stringify({
-              username: username,
-              password: password
+              username: user.username,
+              password: user.password
           }) 
-      })
-      .then(r => r.json())
-      .then(user => {
-          if (!user.errors && !user.message) {
-              login(user)
-              navigate('/')
-          } 
-          else if (user.errors) {
-              setError(user.errors)
-          } else {
-            setError(user.message)
-          }
         })
-      }
-  
+      .then(r => r.json())
+      .then(u => {
+        if (!u.error){
+          login(u)
+          navigate('/')
+        } else {
+          resetForm({ values: '' })
+          setError(u.error)
+        }
+      })
+    }
+  });
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <h1>Login</h1>
+      <h3>Login</h3>
+      <form onSubmit={formik.handleSubmit} style={{ margin: "30px" }}>
         <label htmlFor="username">Username</label>
+        <br />
         <input
-          type="text"
           id="username"
-          autoComplete="off"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          name="username"
+          onChange={formik.handleChange}
+          value={formik.values.username}
         />
+        <p style={{ color: "red" }}> {formik.errors.username}</p>
         <label htmlFor="password">Password</label>
+        <br />
         <input
-          type="password"
           id="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          type="password"
+          name="password"
+          onChange={formik.handleChange}
+          value={formik.values.password}
         />
+        <p style={{ color: "red" }}> {formik.errors.password}</p>
+
         <button type="submit">Login</button>
       </form>
-      {error ? <div>{error}</div> : null}
+      <div>{error}</div>
     </div>
   );
-}
+};
 
-export default Login;
-
-// import React, { useState, useContext } from 'react'
-// import { UserContext } from "./User";
-// import { useFormik } from "formik";
-// import * as yup from "yup";
-// import {useNavigate} from "react-router-dom"
-
-// const Login = () => {
-//   const {login} = useContext(UserContext)
-//   const navigate = useNavigate();
-//   const [refreshPage, setRefreshPage] = useState(false);
-//   // Pass the useFormik() hook initial form values and a submit function that will
-//   // be called when the form is submitted
-
-//   const formSchema = yup.object().shape({
-//     name: yup.string().required("Must enter a name"),
-//     password: yup.string().required("Must enter a password")
-//   });
-
-//   const formik = useFormik({
-//     initialValues: {
-//       name: "",
-//       password: ""
-//     },
-//     validationSchema: formSchema,
-//     onSubmit: (value) => {
-//         login(value)
-//         navigate('/')
-//         setRefreshPage(refreshPage => !refreshPage)
-//     },
-//   });
-
-//   return (
-//     <div>
-//       <form onSubmit={formik.handleSubmit} style={{ margin: "30px" }}>
-//         <label htmlFor="name">Name</label>
-//         <br />
-//         <input
-//           id="name"
-//           name="name"
-//           onChange={formik.handleChange}
-//           value={formik.values.name}
-//         />
-//         <p style={{ color: "red" }}> {formik.errors.name}</p>
-//         <label htmlFor="password">Password</label>
-//         <br />
-//         <input
-//           id="password"
-//           name="password"
-//           onChange={formik.handleChange}
-//           value={formik.values.password}
-//         />
-//         <p style={{ color: "red" }}> {formik.errors.password}</p>
-
-//         <button type="submit">Submit</button>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default Login
+export default Login

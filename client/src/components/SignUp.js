@@ -1,12 +1,12 @@
 import React, { useState, useContext }  from 'react'
-import { UserContext } from "./User";
+import { MyContext } from "../context/AppContext";
 import {useNavigate} from "react-router-dom"
 
 function SignUp() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const {signup} = useContext(UserContext)
+  const {signup} = useContext(MyContext)
   const [error, setError] = useState("")
   const navigate = useNavigate();
 
@@ -22,28 +22,27 @@ function SignUp() {
         password,
         password_confirmation: passwordConfirmation,
       }),
-    }).then((r) => {
-      if (r.ok) {
-        r.json()
-        .then(user => {
-          if (!user.error) {
-              signup(user)
-              navigate('/')
-            } else {
-              setUsername("")
-              setPassword("")
-              setError(user.error)
-            }})
-
-      }
-    });
+    })
+    .then(r =>  r.json())
+    .then(data => {
+        if (!data.error) {
+            signup(data)
+            navigate('/')
+        } else {
+          setUsername("")
+          setPassword("")
+          setError(data.error)
+        }})
+    
   }
 
   return (
     <div>
+      <h3>Signup</h3>
       <form onSubmit={handleSubmit}>
-        <h1>Sign Up</h1>
+        <br/>
         <label htmlFor="username">Username</label>
+        <br/>
         <input
           type="text"
           id="username"
@@ -51,7 +50,10 @@ function SignUp() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
+        <br/>
+        <br/>
         <label htmlFor="password">Password</label>
+        <br/>
         <input
           type="password"
           id="password"
@@ -59,7 +61,10 @@ function SignUp() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
         />
+        <br/>
+        <br/>
         <label htmlFor="password">Password Confirmation</label>
+        <br/>
         <input
           type="password"
           id="password_confirmation"
@@ -67,8 +72,11 @@ function SignUp() {
           onChange={(e) => setPasswordConfirmation(e.target.value)}
           autoComplete="current-password"
         />
+        <br/>
+        <br/>
         <button type="submit">Sign Up</button>
       </form>
+      <div>{error}</div>
     </div>
   );
 }

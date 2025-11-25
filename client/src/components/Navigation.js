@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
-import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { UserContext } from "./User";
+import { NavLink, useNavigate } from 'react-router-dom'
+import { MyContext } from "../context/AppContext";
 
 const link = {
     width: '100px',
@@ -12,7 +12,7 @@ const link = {
 }
 
 const Navigation = () => {
-    const {user, logout, loggedIn} = useContext(UserContext);
+    const {user, logout, loggedIn} = useContext(MyContext);
     const navigate = useNavigate()
 
     const logoutUser = () => {
@@ -23,7 +23,7 @@ const Navigation = () => {
       navigate('/')
     }
 
-    if (loggedIn){
+    if (loggedIn && loggedIn !== "init"){
         return (
         <div>
             <h1>Hello {user.username}</h1>

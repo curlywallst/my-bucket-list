@@ -1,50 +1,58 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { UserContext } from "./User";
-import { useParams } from 'react-router-dom';
+import React, { useContext } from 'react'
+import { MyContext } from "../context/AppContext";
+import { useFormik } from "formik";
+import * as yup from "yup";
 
 const ItemEditForm = ({item, setFormFlag}) => {
-  const [title, setTitle] = useState(item.title)
-  const [content, setContent] = useState(item.content)
-  const {loggedIn, editItem} = useContext(UserContext);
 
-  const handleSubmit = (e) => {
-      e.preventDefault()
-      const updatedItem = 
-          {
-              id: item.id,
-              title: title,
-              content: content,
-              bucket_id: item.bucket_id
-          }
+    const {editItem} = useContext(MyContext)
 
-      console.log(updatedItem)
-      editItem(updatedItem)
-      setTitle("")
-      setContent("")
-      setFormFlag(false)
-  }
+    const formSchema = yup.object().shape({
+        title: yup.string().required("Must enter a title").max(50),
+        content: yup.string().required("Must Content").max(250),
+    });
 
-  return (
-      <form onSubmit={handleSubmit}>
-          <label>Title: </label>
-          <input 
-              type="text"
-              id="title" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-          /> <br/>
-          <label>Content: </label>
-          <textarea
-              id="content" 
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-          />
-          <br/>
-          <input type="submit"/>
-      </form>
-  )
-}
+    const formik = useFormik({
+        initialValues: {
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            bucket_id: item.bucket_id,
+        },
+        validationSchema: formSchema,
+        onSubmit: (value) => {
+            editItem(value)
+            setFormFlag(false)
+        },
+    });
 
+    return (
+        <div>
+        <form onSubmit={formik.handleSubmit} style={{ margin: "30px" }}>
+            <label htmlFor="title">Title</label>
+            <br />
+            <input
+            id="title"
+            name="title"
+            onChange={formik.handleChange}
+            value={formik.values.title}
+            />
+            <p style={{ color: "red" }}> {formik.errors.title}</p>
 
+            <label htmlFor="content">Content</label>
+            <br />
+            <input
+            id="content"
+            name="content"
+            onChange={formik.handleChange}
+            value={formik.values.content}
+            />
+            <p style={{ color: "red" }}> {formik.errors.content}</p>
+
+            <button type="submit">Edit Item</button>
+        </form>
+        </div>
+    );
+    };
 
 export default ItemEditForm

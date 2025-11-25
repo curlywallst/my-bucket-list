@@ -1,6 +1,6 @@
 
 import React, { useContext, useState, useEffect }  from 'react'
-import { UserContext } from "./User";
+import { MyContext } from "../context/AppContext";
 import BucketLink from './BucketLink';
 import ItemForm from './ItemForm';
 
@@ -9,18 +9,20 @@ const Home = () => {
     const [displayBuckets, setDisplayBuckets] = useState([])
     const [formFlag, setFormFlag] = useState(false)
 
-    const {user, loggedIn} = useContext(UserContext);
+    const {user, loggedIn, userBuckets} = useContext(MyContext);
+    const [loggedInFlag, setLoggedInFlag] = useState(loggedIn)
 
     useEffect(()=> {
-        const bucketList = user.buckets.map(b => <div key={b.id} ><BucketLink bucket={b} /></div>)
+        setLoggedInFlag(loggedIn)
+        const bucketList = userBuckets.map(b => <div key={b.id} ><BucketLink bucket={b} /></div>)
         setDisplayBuckets(bucketList)
-      }, [loggedIn, user])
+      }, [loggedIn, user, userBuckets])
 
     const handleClick = () => {
-    setFormFlag(formFlag => !formFlag)
+        setFormFlag(formFlag => !formFlag)
     }
 
-    if (!loggedIn) {
+    if (!loggedInFlag) {
         return (<h3>Please Login or Signup</h3>)
     } else {
         return (

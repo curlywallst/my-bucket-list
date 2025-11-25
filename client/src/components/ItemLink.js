@@ -1,13 +1,12 @@
 import React, { useState, useContext } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { UserContext } from "./User";
+import { Link } from 'react-router-dom'
+import { MyContext } from "../context/AppContext";
 import ItemEditForm from './ItemEditForm';
 
 
 const ItemLink = ({item}) => {
     const [formFlag, setFormFlag] = useState(false)
-    const {user, deleteItem} = useContext(UserContext);
-    const {id} = useParams();
+    const {deleteItem, editItem} = useContext(MyContext);
 
 
     return (
@@ -18,7 +17,7 @@ const ItemLink = ({item}) => {
                 - <button onClick={() => deleteItem(item)} >X</button>   
                 <button onClick={() => setFormFlag((formFlag) => !formFlag)} >Edit</button>
             </span>
-            {formFlag ? <ItemEditForm item={item} setFormFlag={setFormFlag}/> : null}
+            {formFlag ? <ItemEditForm item={item} editItem={editItem} setFormFlag={setFormFlag}/> : null}
         </div>
     )
 }

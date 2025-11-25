@@ -1,27 +1,26 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
-import { UserContext } from "./User";
-import ItemLink from './ItemLink';
+import { useContext, useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { MyContext } from "../context/AppContext";
 
-
-
-const Item = () => {
+function Item(){
     const [item, setItem] = useState({
         title: '',
         content: ''
     })
     
-    const {user, loggedIn} = useContext(UserContext);
+    const {user, loggedIn, userBuckets} = useContext(MyContext);
     const {bucket_id, id} = useParams();
     const navigate = useNavigate()
 
     useEffect(() => {
         if (loggedIn){
-          const selectedBucket = user.buckets.find(b => b.id == bucket_id)
-          const selectedItem = selectedBucket.items.find(i => i.id == id)
-          setItem(selectedItem)
+          const selectedBucket = userBuckets.find(b => b.id === parseInt(bucket_id))
+          if (selectedBucket){
+              const selectedItem = selectedBucket.items.find(i => i.id === parseInt(id))
+              setItem(selectedItem)
+          }
         }
-      }, [loggedIn])
+      }, [loggedIn, bucket_id, id, userBuckets])
 
     const handleClick = () => {
         navigate(-1)

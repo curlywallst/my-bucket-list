@@ -1,33 +1,40 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { UserContext } from "./User";
-import BucketLink from './BucketLink';
+import { MyContext } from "../context/AppContext";
 import BucketForm from './BucketForm';
+import { useNavigate } from "react-router-dom";
 
 function Buckets() {
   const [displayBuckets, setDisplayBuckets] = useState([])
-  const [formFlag, setFormFlag] = useState(false)
-  const {user, loggedIn, buckets} = useContext(UserContext);
 
-
+  const {loggedIn, buckets, bucketError, bucketFormFlag, setBucketFormFlag} = useContext(MyContext);
+  const navigate = useNavigate();
+  
   useEffect(()=> {
-    const bucketList = buckets.map(b => <h4 key={b.id} >{b.name}</h4>)    
-    setDisplayBuckets(bucketList)
-  }, [loggedIn, buckets, user])
+    if (loggedIn === false){
+        console.log('not logged in')
+        navigate('/login')
+    }
+    if (loggedIn === true){
+      fetch("/buckets")
+      .then(r => r.json())
+      .then(data => {
+          const bucketList = data.map(b => <h4 key={b.id} >{b.name}</h4>)    
+          setDisplayBuckets(bucketList)
+      })
+    } 
+  }, [buckets, navigate, loggedIn])
 
   const handleClick = () => {
-    setFormFlag(formFlag => !formFlag)
+    setBucketFormFlag(true)
   }
-
-  if (!loggedIn){
-    return(<div>Please login or signup</div>)
-  }
+  
   return (
     <div>
       {displayBuckets}
       <br/>
       <br/>
-      
-      {formFlag ? <BucketForm setFormFlag={setFormFlag} /> : <button onClick={handleClick} >Add Bucket</button>}
+      {bucketFormFlag ? <BucketForm /> : <button onClick={handleClick} >Add Bucket</button>}
+      <p style={{ color: "red" }}> {bucketError}</p>
     </div>
   )
 }

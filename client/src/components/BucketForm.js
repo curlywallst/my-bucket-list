@@ -1,13 +1,13 @@
-import React, { useState, useContext } from 'react'
-import { UserContext } from "./User";
+
+
+import React, { useContext } from 'react'
+import { MyContext } from "../context/AppContext";
 import { useFormik } from "formik";
 import * as yup from "yup";
 
-const BucketForm = ({ setFormFlag }) => {
-  const {addBucket} = useContext(UserContext)
-  const [refreshPage, setRefreshPage] = useState(false);
-  // Pass the useFormik() hook initial form values and a submit function that will
-  // be called when the form is submitted
+const BucketForm = () => {
+  const {addBucket} = useContext(MyContext)
+
 
   const formSchema = yup.object().shape({
     name: yup.string().required("Must enter a name").max(50)
@@ -18,10 +18,9 @@ const BucketForm = ({ setFormFlag }) => {
       name: "",
     },
     validationSchema: formSchema,
-    onSubmit: (value) => {
-        addBucket(value)
-        setFormFlag(false)
-        setRefreshPage(refreshPage => !refreshPage)
+    onSubmit: (value, { resetForm }) => {
+        resetForm()
+        addBucket(value)    
     },
   });
 
@@ -37,6 +36,7 @@ const BucketForm = ({ setFormFlag }) => {
           value={formik.values.name}
         />
         <p style={{ color: "red" }}> {formik.errors.name}</p>
+        
 
         <button type="submit">Submit</button>
       </form>
